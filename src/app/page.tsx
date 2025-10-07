@@ -13,6 +13,7 @@ function SunWave() {
   const [dialOffset, setDialOffset] = useState(0);
   const [timeOffset, setTimeOffset] = useState(0); // in hours
   const [chartDimensions, setChartDimensions] = useState({ width: 600, height: 450 });
+  const [stars, setStars] = useState<{ x: number; y: number; size: number; delay: number }[]>([]);
   const chartRef = useRef<HTMLDivElement>(null);
   const dialRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
@@ -21,6 +22,14 @@ function SunWave() {
 
   useEffect(() => {
     setMounted(true);
+    // Generate random stars
+    const generatedStars = Array.from({ length: 80 }, () => ({
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      size: Math.random() * 1.5 + 0.5,
+      delay: Math.random() * 3
+    }));
+    setStars(generatedStars);
   }, []);
 
   useEffect(() => {
@@ -233,6 +242,32 @@ function SunWave() {
             )`
           }}
         />
+
+        {/* Stars overlay for night sections */}
+        <div className="absolute inset-0 pointer-events-none">
+          {stars.map((star, i) => {
+            // Only show stars in night sections (0-19% and 81-100%)
+            const isInNightZone = star.x < 19 || star.x > 81;
+            if (!isInNightZone) return null;
+
+            return (
+              <div
+                key={i}
+                className="absolute rounded-full bg-white"
+                style={{
+                  left: `${star.x}%`,
+                  top: `${star.y}%`,
+                  width: `${star.size}px`,
+                  height: `${star.size}px`,
+                  opacity: 0.8,
+                  animation: `twinkle 3s ease-in-out infinite`,
+                  animationDelay: `${star.delay}s`,
+                  boxShadow: '0 0 2px rgba(255,255,255,0.8)'
+                }}
+              />
+            );
+          })}
+        </div>
 
         {/* SVG for sine wave and horizon */}
         <svg className="absolute inset-0" width={width} height={height}>
