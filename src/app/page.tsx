@@ -1,103 +1,254 @@
-import Image from "next/image";
+'use client';
+
+import { useState, useEffect } from 'react';
+
+function SunWave() {
+  const [torontoTime, setTorontoTime] = useState('');
+  const [delhiTime, setDelhiTime] = useState('');
+
+  const [torontoPosition, setTorontoPosition] = useState({ x: 0, y: 0, hours: 0 });
+  const [delhiPosition, setDelhiPosition] = useState({ x: 0, y: 0, hours: 0 });
+
+  useEffect(() => {
+    const updateTimes = () => {
+      const now = new Date();
+
+      const torontoFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Toronto',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+
+      const delhiFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Kolkata',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+
+      setTorontoTime(torontoFormatter.format(now));
+      setDelhiTime(delhiFormatter.format(now));
+
+      // Calculate positions on the chart
+      const torontoDate = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Toronto',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: false
+      }).formatToParts(now);
+
+      const delhiDate = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Kolkata',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: false
+      }).formatToParts(now);
+
+      const getTimeInHours = (parts: Intl.DateTimeFormatPart[]) => {
+        const hours = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
+        const minutes = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
+        const seconds = parseInt(parts.find(p => p.type === 'second')?.value || '0');
+        return hours + minutes / 60 + seconds / 3600;
+      };
+
+      const torontoHours = getTimeInHours(torontoDate);
+      const delhiHours = getTimeInHours(delhiDate);
+
+      const width = 800;
+      const height = 300;
+      const centerY = height / 2;
+      const amplitude = height / 2.5;
+
+      const calculatePosition = (hours: number) => {
+        const x = (hours / 24) * width;
+        const angle = (hours / 24) * 2 * Math.PI - Math.PI / 2;
+        const y = centerY - Math.sin(angle) * amplitude;
+        return { x, y, hours };
+      };
+
+      setTorontoPosition(calculatePosition(torontoHours));
+      setDelhiPosition(calculatePosition(delhiHours));
+    };
+
+    updateTimes();
+    const interval = setInterval(updateTimes, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Generate sine wave path
+  const width = 800;
+  const height = 300;
+  const centerY = height / 2;
+  const amplitude = height / 2.5;
+  const points = 200;
+
+  let pathData = '';
+  for (let i = 0; i <= points; i++) {
+    const x = (i / points) * width;
+    const angle = (i / points) * 2 * Math.PI - Math.PI / 2;
+    const y = centerY - Math.sin(angle) * amplitude;
+
+    if (i === 0) {
+      pathData += `M ${x} ${y}`;
+    } else {
+      pathData += ` L ${x} ${y}`;
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-4">
+      <div className="flex gap-12 justify-center text-2xl font-mono">
+        <div className="flex flex-col items-center">
+          <div className="text-sm text-rose-500 font-semibold mb-1">Toronto</div>
+          <div className="text-3xl font-bold text-zinc-100">{torontoTime}</div>
+        </div>
+        <div className="flex flex-col items-center">
+          <div className="text-sm text-teal-400 font-semibold mb-1">New Delhi</div>
+          <div className="text-3xl font-bold text-zinc-100">{delhiTime}</div>
+        </div>
+      </div>
+
+      <div className="relative w-[800px] h-[300px] border border-zinc-800/50 rounded-2xl overflow-hidden shadow-2xl shadow-black/40">
+        {/* Sky gradient background */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `linear-gradient(to right,
+              #09090b 0%,
+              #18181b 12.5%,
+              #27272a 16.7%,
+              #3f3f46 20%,
+              #ea580c 20.8%,
+              #f97316 23%,
+              #fb923c 25%,
+              #fbbf24 29.2%,
+              #06b6d4 33.3%,
+              #0891b2 41.7%,
+              #0e7490 50%,
+              #0891b2 58.3%,
+              #06b6d4 66.7%,
+              #fbbf24 70.8%,
+              #fb923c 75%,
+              #f97316 77%,
+              #ea580c 79.2%,
+              #3f3f46 80%,
+              #27272a 83.3%,
+              #18181b 87.5%,
+              #09090b 100%
+            )`
+          }}
+        />
+
+        {/* SVG for sine wave and horizon */}
+        <svg className="absolute inset-0" width={width} height={height}>
+          {/* Horizon line */}
+          <line
+            x1="0"
+            y1={centerY}
+            x2={width}
+            y2={centerY}
+            stroke="rgba(250, 250, 250, 0.15)"
+            strokeWidth="1.5"
+            strokeDasharray="6,4"
+          />
+
+          {/* Sine wave */}
+          <path
+            d={pathData}
+            stroke="#fbbf24"
+            strokeWidth="3"
+            fill="none"
+            opacity="0.85"
+          />
+
+          {/* Time labels */}
+          {[
+            { label: '0h', pos: 0 },
+            { label: '3h', pos: 0.125 },
+            { label: '6h', pos: 0.25 },
+            { label: '9h', pos: 0.375 },
+            { label: '12h', pos: 0.5 },
+            { label: '15h', pos: 0.625 },
+            { label: '18h', pos: 0.75 },
+            { label: '21h', pos: 0.875 },
+            { label: '24h', pos: 1 }
+          ].map(({ label, pos }) => (
+            <text
+              key={label}
+              x={pos * width}
+              y={height - 10}
+              textAnchor="middle"
+              fill="#ffffff"
+              fontSize="12"
+              fontFamily="sans-serif"
+            >
+              {label}
+            </text>
+          ))}
+
+          {/* Toronto marker */}
+          <g>
+            <circle
+              cx={torontoPosition.x}
+              cy={torontoPosition.y}
+              r="8"
+              fill="#f43f5e"
+              stroke="#fafafa"
+              strokeWidth="2"
+            />
+            <text
+              x={torontoPosition.x}
+              y={torontoPosition.y - 16}
+              textAnchor="middle"
+              fill="#fafafa"
+              fontSize="13"
+              fontWeight="600"
+              fontFamily="system-ui, sans-serif"
+              style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}
+            >
+              Toronto
+            </text>
+          </g>
+
+          {/* Delhi marker */}
+          <g>
+            <circle
+              cx={delhiPosition.x}
+              cy={delhiPosition.y}
+              r="8"
+              fill="#14b8a6"
+              stroke="#fafafa"
+              strokeWidth="2"
+            />
+            <text
+              x={delhiPosition.x}
+              y={delhiPosition.y - 16}
+              textAnchor="middle"
+              fill="#fafafa"
+              fontSize="13"
+              fontWeight="600"
+              fontFamily="system-ui, sans-serif"
+              style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}
+            >
+              New Delhi
+            </text>
+          </g>
+        </svg>
+      </div>
+    </div>
+  );
+}
 
 export default function Home() {
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
-
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+    <div className="font-sans flex items-center justify-center min-h-screen p-8 bg-zinc-950">
+      <SunWave />
     </div>
   );
 }
