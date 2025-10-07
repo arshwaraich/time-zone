@@ -6,6 +6,8 @@ function SunWave() {
   const [mounted, setMounted] = useState(false);
   const [torontoTime, setTorontoTime] = useState('');
   const [delhiTime, setDelhiTime] = useState('');
+  const [torontoDate, setTorontoDate] = useState('');
+  const [delhiDate, setDelhiDate] = useState('');
 
   const [torontoPosition, setTorontoPosition] = useState({ x: 0, y: 0, hours: 0 });
   const [delhiPosition, setDelhiPosition] = useState({ x: 0, y: 0, hours: 0 });
@@ -67,8 +69,24 @@ function SunWave() {
         hour12: true
       });
 
+      const torontoDateFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'America/Toronto',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+
+      const delhiDateFormatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: 'Asia/Kolkata',
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      });
+
       setTorontoTime(torontoFormatter.format(adjustedTime));
       setDelhiTime(delhiFormatter.format(adjustedTime));
+      setTorontoDate(torontoDateFormatter.format(adjustedTime));
+      setDelhiDate(delhiDateFormatter.format(adjustedTime));
 
       // Calculate positions on the chart
       const torontoDate = new Intl.DateTimeFormat('en-US', {
@@ -200,19 +218,9 @@ function SunWave() {
   }
 
   return (
-    <div className="flex flex-col gap-4 w-full max-w-[600px] sm:px-4">
-      <div className="flex gap-8 sm:gap-12 justify-center text-xl sm:text-2xl font-mono">
-        <div className="flex flex-col items-center">
-          <div className="text-xs sm:text-sm text-rose-500 font-semibold mb-1">Toronto</div>
-          <div className="text-2xl sm:text-3xl font-bold text-zinc-100">{torontoTime}</div>
-        </div>
-        <div className="flex flex-col items-center">
-          <div className="text-xs sm:text-sm text-teal-400 font-semibold mb-1">New Delhi</div>
-          <div className="text-2xl sm:text-3xl font-bold text-zinc-100">{delhiTime}</div>
-        </div>
-      </div>
-
-      <div ref={chartRef} className="relative w-full aspect-[4/3] border border-zinc-800/50 rounded-2xl overflow-hidden shadow-2xl shadow-black/40">
+    <div className="flex flex-col sm:gap-4 w-full max-w-[600px] sm:px-4 h-full sm:h-auto">
+      {/* Chart - Top on mobile */}
+      <div ref={chartRef} className="relative w-full aspect-[4/3] sm:aspect-[4/3] border border-zinc-800/50 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl shadow-black/40 sm:order-2">
         {/* Sky gradient background */}
         <div
           className="absolute inset-0"
@@ -364,8 +372,26 @@ function SunWave() {
         </svg>
       </div>
 
-      {/* Horizontal Dial */}
-      <div className="w-full h-16 sm:h-20 relative overflow-hidden bg-zinc-900/50 rounded-xl border border-zinc-800/50 cursor-grab active:cursor-grabbing select-none">
+      {/* Times - Vertical list on mobile, horizontal on desktop */}
+      <div className="flex flex-col sm:flex-row gap-3 sm:gap-12 justify-center text-xl sm:text-2xl font-mono py-4 sm:py-0 sm:order-1">
+        <div className="flex items-center justify-between sm:flex-col sm:items-center px-4 sm:px-0">
+          <div className="flex flex-col sm:items-center">
+            <div className="text-sm sm:text-sm text-rose-500 font-semibold">Toronto</div>
+            <div className="text-[10px] sm:text-xs text-zinc-500">{torontoDate}</div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-bold text-zinc-100 sm:mt-1">{torontoTime}</div>
+        </div>
+        <div className="flex items-center justify-between sm:flex-col sm:items-center px-4 sm:px-0">
+          <div className="flex flex-col sm:items-center">
+            <div className="text-sm sm:text-sm text-teal-400 font-semibold">New Delhi</div>
+            <div className="text-[10px] sm:text-xs text-zinc-500">{delhiDate}</div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-bold text-zinc-100 sm:mt-1">{delhiTime}</div>
+        </div>
+      </div>
+
+      {/* Horizontal Dial - Bottom on mobile, thicker for touch */}
+      <div className="w-full h-20 sm:h-20 relative overflow-hidden bg-zinc-900/50 rounded-lg sm:rounded-xl border border-zinc-800/50 cursor-grab active:cursor-grabbing select-none mt-auto sm:mt-0 sm:order-3">
         <div
           ref={dialRef}
           className="absolute inset-0 flex items-center"
@@ -411,8 +437,10 @@ function SunWave() {
 
 export default function Home() {
   return (
-    <div className="font-sans flex items-center justify-center min-h-screen p-8 bg-zinc-950 overscroll-none">
-      <SunWave />
+    <div className="font-sans flex items-center justify-center min-h-screen h-screen p-3 sm:p-8 bg-zinc-950 overscroll-none">
+      <div className="w-full h-full flex items-end pb-[25vh] sm:items-center sm:pb-0 justify-center">
+        <SunWave />
+      </div>
     </div>
   );
 }
