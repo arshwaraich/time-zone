@@ -46,16 +46,16 @@ function SunWave() {
 
       const torontoFormatter = new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/Toronto',
-        hour: '2-digit',
+        hour: 'numeric',
         minute: '2-digit',
-        hour12: false
+        hour12: true
       });
 
       const delhiFormatter = new Intl.DateTimeFormat('en-US', {
         timeZone: 'Asia/Kolkata',
-        hour: '2-digit',
+        hour: 'numeric',
         minute: '2-digit',
-        hour12: false
+        hour12: true
       });
 
       setTorontoTime(torontoFormatter.format(adjustedTime));
@@ -378,7 +378,7 @@ function SunWave() {
 
 export default function Home() {
   return (
-    <div className="font-sans flex items-center justify-center min-h-screen p-8 bg-zinc-950">
+    <div className="font-sans flex items-center justify-center min-h-screen p-8 bg-zinc-950 overscroll-none">
       <SunWave />
     </div>
   );
