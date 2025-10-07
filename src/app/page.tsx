@@ -12,6 +12,8 @@ function SunWave() {
 
   const [dialOffset, setDialOffset] = useState(0);
   const [timeOffset, setTimeOffset] = useState(0); // in hours
+  const [chartDimensions, setChartDimensions] = useState({ width: 600, height: 450 });
+  const chartRef = useRef<HTMLDivElement>(null);
   const dialRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -20,6 +22,22 @@ function SunWave() {
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    const updateDimensions = () => {
+      if (chartRef.current) {
+        const { width, height } = chartRef.current.getBoundingClientRect();
+        setChartDimensions({ width, height });
+      }
+    };
+
+    updateDimensions();
+    window.addEventListener('resize', updateDimensions);
+
+    return () => window.removeEventListener('resize', updateDimensions);
+  }, [mounted]);
 
   useEffect(() => {
     const updateTimes = () => {
@@ -67,8 +85,8 @@ function SunWave() {
       const torontoHours = getTimeInHours(torontoDate);
       const delhiHours = getTimeInHours(delhiDate);
 
-      const width = 800;
-      const height = 300;
+      const width = chartDimensions.width;
+      const height = chartDimensions.height;
       const centerY = height / 2;
       const amplitude = height / 2.5;
 
@@ -84,7 +102,7 @@ function SunWave() {
     };
 
     updateTimes();
-  }, [timeOffset]);
+  }, [timeOffset, chartDimensions]);
 
   // Dial drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -149,8 +167,8 @@ function SunWave() {
   }, []);
 
   // Generate sine wave path
-  const width = 800;
-  const height = 300;
+  const width = chartDimensions.width;
+  const height = chartDimensions.height;
   const centerY = height / 2;
   const amplitude = height / 2.5;
   const points = 200;
@@ -173,19 +191,19 @@ function SunWave() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex gap-12 justify-center text-2xl font-mono">
+    <div className="flex flex-col gap-4 w-full max-w-[600px] sm:px-4">
+      <div className="flex gap-8 sm:gap-12 justify-center text-xl sm:text-2xl font-mono">
         <div className="flex flex-col items-center">
-          <div className="text-sm text-rose-500 font-semibold mb-1">Toronto</div>
-          <div className="text-3xl font-bold text-zinc-100">{torontoTime}</div>
+          <div className="text-xs sm:text-sm text-rose-500 font-semibold mb-1">Toronto</div>
+          <div className="text-2xl sm:text-3xl font-bold text-zinc-100">{torontoTime}</div>
         </div>
         <div className="flex flex-col items-center">
-          <div className="text-sm text-teal-400 font-semibold mb-1">New Delhi</div>
-          <div className="text-3xl font-bold text-zinc-100">{delhiTime}</div>
+          <div className="text-xs sm:text-sm text-teal-400 font-semibold mb-1">New Delhi</div>
+          <div className="text-2xl sm:text-3xl font-bold text-zinc-100">{delhiTime}</div>
         </div>
       </div>
 
-      <div className="relative w-[800px] h-[300px] border border-zinc-800/50 rounded-2xl overflow-hidden shadow-2xl shadow-black/40">
+      <div ref={chartRef} className="relative w-full aspect-[4/3] border border-zinc-800/50 rounded-2xl overflow-hidden shadow-2xl shadow-black/40">
         {/* Sky gradient background */}
         <div
           className="absolute inset-0"
@@ -314,7 +332,7 @@ function SunWave() {
       </div>
 
       {/* Horizontal Dial */}
-      <div className="w-[800px] h-20 relative overflow-hidden bg-zinc-900/50 rounded-xl border border-zinc-800/50 cursor-grab active:cursor-grabbing select-none">
+      <div className="w-full h-16 sm:h-20 relative overflow-hidden bg-zinc-900/50 rounded-xl border border-zinc-800/50 cursor-grab active:cursor-grabbing select-none">
         <div
           ref={dialRef}
           className="absolute inset-0 flex items-center"
@@ -339,13 +357,13 @@ function SunWave() {
                   <div
                     className={`${
                       isMajor
-                        ? 'h-10 w-0.5 bg-zinc-300'
+                        ? 'h-8 sm:h-10 w-0.5 bg-zinc-300'
                         : isMinor
-                        ? 'h-6 w-0.5 bg-zinc-500'
-                        : 'h-4 w-px bg-zinc-600'
+                        ? 'h-5 sm:h-6 w-0.5 bg-zinc-500'
+                        : 'h-3 sm:h-4 w-px bg-zinc-600'
                     }`}
                   />
-                  <div className="w-4" />
+                  <div className="w-3 sm:w-4" />
                 </div>
               );
             })}
