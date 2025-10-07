@@ -16,9 +16,12 @@ export const metadata: Metadata = {
   title: "World Clock",
   description: "Visualize time across the world",
   icons: {
-    icon: '/icon.png',
-    apple: '/icon.png',
+    icon: '/time-zone/icon.png',
+    apple: '/time-zone/icon.png',
   },
+  manifest: "/time-zone/manifest.json",
+  themeColor: "#000000",
+  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
 };
 
 export default function RootLayout({
@@ -31,7 +34,7 @@ export default function RootLayout({
       <head>
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <link rel="apple-touch-icon" href="/icon.png" />
+        <link rel="apple-touch-icon" href="/time-zone/icon.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
