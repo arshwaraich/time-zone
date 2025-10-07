@@ -1,23 +1,35 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 function SunWave() {
+  const [mounted, setMounted] = useState(false);
   const [torontoTime, setTorontoTime] = useState('');
   const [delhiTime, setDelhiTime] = useState('');
 
   const [torontoPosition, setTorontoPosition] = useState({ x: 0, y: 0, hours: 0 });
   const [delhiPosition, setDelhiPosition] = useState({ x: 0, y: 0, hours: 0 });
 
+  const [dialOffset, setDialOffset] = useState(0);
+  const [timeOffset, setTimeOffset] = useState(0); // in hours
+  const dialRef = useRef<HTMLDivElement>(null);
+  const isDragging = useRef(false);
+  const startX = useRef(0);
+  const currentOffset = useRef(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   useEffect(() => {
     const updateTimes = () => {
       const now = new Date();
+      const adjustedTime = new Date(now.getTime() + timeOffset * 3600000); // Add offset in milliseconds
 
       const torontoFormatter = new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/Toronto',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit',
         hour12: false
       });
 
@@ -25,35 +37,31 @@ function SunWave() {
         timeZone: 'Asia/Kolkata',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit',
         hour12: false
       });
 
-      setTorontoTime(torontoFormatter.format(now));
-      setDelhiTime(delhiFormatter.format(now));
+      setTorontoTime(torontoFormatter.format(adjustedTime));
+      setDelhiTime(delhiFormatter.format(adjustedTime));
 
       // Calculate positions on the chart
       const torontoDate = new Intl.DateTimeFormat('en-US', {
         timeZone: 'America/Toronto',
         hour: 'numeric',
         minute: 'numeric',
-        second: 'numeric',
         hour12: false
-      }).formatToParts(now);
+      }).formatToParts(adjustedTime);
 
       const delhiDate = new Intl.DateTimeFormat('en-US', {
         timeZone: 'Asia/Kolkata',
         hour: 'numeric',
         minute: 'numeric',
-        second: 'numeric',
         hour12: false
-      }).formatToParts(now);
+      }).formatToParts(adjustedTime);
 
       const getTimeInHours = (parts: Intl.DateTimeFormatPart[]) => {
         const hours = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
         const minutes = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
-        const seconds = parseInt(parts.find(p => p.type === 'second')?.value || '0');
-        return hours + minutes / 60 + seconds / 3600;
+        return hours + minutes / 60;
       };
 
       const torontoHours = getTimeInHours(torontoDate);
@@ -76,9 +84,68 @@ function SunWave() {
     };
 
     updateTimes();
-    const interval = setInterval(updateTimes, 1000);
+  }, [timeOffset]);
 
-    return () => clearInterval(interval);
+  // Dial drag handlers
+  const handleMouseDown = (e: React.MouseEvent) => {
+    isDragging.current = true;
+    startX.current = e.clientX;
+    currentOffset.current = dialOffset;
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    isDragging.current = true;
+    startX.current = e.touches[0].clientX;
+    currentOffset.current = dialOffset;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging.current) return;
+    const deltaX = e.clientX - startX.current;
+    const newOffset = currentOffset.current + deltaX;
+    setDialOffset(newOffset);
+    // Convert pixels to hours (1 hour = 20 pixels movement)
+    setTimeOffset(-(newOffset / 20));
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging.current) return;
+    const deltaX = e.touches[0].clientX - startX.current;
+    const newOffset = currentOffset.current + deltaX;
+    setDialOffset(newOffset);
+    // Convert pixels to hours (1 hour = 20 pixels movement)
+    setTimeOffset(-(newOffset / 20));
+  };
+
+  const handleMouseUp = () => {
+    isDragging.current = false;
+  };
+
+  const handleTouchEnd = () => {
+    isDragging.current = false;
+  };
+
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (!isDragging.current) return;
+      const deltaX = e.clientX - startX.current;
+      const newOffset = currentOffset.current + deltaX;
+      setDialOffset(newOffset);
+      // Convert pixels to hours (1 hour = 20 pixels movement)
+      setTimeOffset(-(newOffset / 20));
+    };
+
+    const handleGlobalMouseUp = () => {
+      isDragging.current = false;
+    };
+
+    document.addEventListener('mousemove', handleGlobalMouseMove);
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleGlobalMouseMove);
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+    };
   }, []);
 
   // Generate sine wave path
@@ -99,6 +166,10 @@ function SunWave() {
     } else {
       pathData += ` L ${x} ${y}`;
     }
+  }
+
+  if (!mounted) {
+    return null;
   }
 
   return (
@@ -240,6 +311,48 @@ function SunWave() {
             </text>
           </g>
         </svg>
+      </div>
+
+      {/* Horizontal Dial */}
+      <div className="w-[800px] h-20 relative overflow-hidden bg-zinc-900/50 rounded-xl border border-zinc-800/50 cursor-grab active:cursor-grabbing select-none">
+        <div
+          ref={dialRef}
+          className="absolute inset-0 flex items-center"
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+        >
+          {/* Generate dial marks - create infinite looping effect */}
+          <div
+            className="flex items-center h-full"
+            style={{
+              transform: `translateX(${dialOffset % 200}px)`,
+              marginLeft: '-200px'
+            }}
+          >
+            {Array.from({ length: 150 }).map((_, i) => {
+              const isMajor = i % 10 === 0;
+              const isMinor = i % 5 === 0;
+              return (
+                <div key={i} className="flex items-center flex-shrink-0">
+                  <div
+                    className={`${
+                      isMajor
+                        ? 'h-10 w-0.5 bg-zinc-300'
+                        : isMinor
+                        ? 'h-6 w-0.5 bg-zinc-500'
+                        : 'h-4 w-px bg-zinc-600'
+                    }`}
+                  />
+                  <div className="w-4" />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        {/* Center indicator */}
+        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-rose-500 pointer-events-none" />
       </div>
     </div>
   );
