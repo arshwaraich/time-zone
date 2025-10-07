@@ -2,6 +2,9 @@
 
 An interactive time zone visualization showing Toronto and New Delhi times on an animated sun path chart. Built as a PWA with Next.js, React, and Tailwind CSS.
 
+<img width="773" height="608" alt="Screenshot 2025-10-07 at 12 52 04 am" src="https://github.com/user-attachments/assets/8e722655-3259-4fce-9687-fde337653541" />
+
+
 ## Features
 
 - 🌍 Real-time display of Toronto and New Delhi local times
