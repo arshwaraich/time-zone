@@ -20,13 +20,13 @@ export const metadata: Metadata = {
     apple: '/time-zone/icon.png',
   },
   manifest: "/time-zone/manifest.json",
-  themeColor: "#000000",
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  themeColor: "black",
 };
 
 export default function RootLayout({
