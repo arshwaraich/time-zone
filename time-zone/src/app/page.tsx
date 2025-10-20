@@ -2,15 +2,54 @@
 
 import { useState, useEffect, useRef } from 'react';
 
+interface Timezone {
+  name: string;
+  zone: string;
+  color: string;
+}
+
+interface TimezoneData {
+  time: string;
+  date: string;
+  position: { x: number; y: number; hours: number };
+}
+
+const COLORS = ['#f43f5e', '#14b8a6', '#8b5cf6', '#f59e0b', '#3b82f6', '#ec4899', '#10b981', '#f97316'];
+
+const COMMON_TIMEZONES = [
+  { name: 'New York', zone: 'America/New_York' },
+  { name: 'Los Angeles', zone: 'America/Los_Angeles' },
+  { name: 'Chicago', zone: 'America/Chicago' },
+  { name: 'Toronto', zone: 'America/Toronto' },
+  { name: 'London', zone: 'Europe/London' },
+  { name: 'Paris', zone: 'Europe/Paris' },
+  { name: 'Berlin', zone: 'Europe/Berlin' },
+  { name: 'Tokyo', zone: 'Asia/Tokyo' },
+  { name: 'Beijing', zone: 'Asia/Shanghai' },
+  { name: 'Hong Kong', zone: 'Asia/Hong_Kong' },
+  { name: 'Singapore', zone: 'Asia/Singapore' },
+  { name: 'Dubai', zone: 'Asia/Dubai' },
+  { name: 'New Delhi', zone: 'Asia/Kolkata' },
+  { name: 'Sydney', zone: 'Australia/Sydney' },
+  { name: 'Melbourne', zone: 'Australia/Melbourne' },
+  { name: 'Auckland', zone: 'Pacific/Auckland' },
+  { name: 'Moscow', zone: 'Europe/Moscow' },
+  { name: 'Istanbul', zone: 'Europe/Istanbul' },
+  { name: 'São Paulo', zone: 'America/Sao_Paulo' },
+  { name: 'Mexico City', zone: 'America/Mexico_City' },
+  { name: 'Seoul', zone: 'Asia/Seoul' },
+  { name: 'Bangkok', zone: 'Asia/Bangkok' },
+  { name: 'Jakarta', zone: 'Asia/Jakarta' },
+];
+
 function SunWave() {
   const [mounted, setMounted] = useState(false);
-  const [torontoTime, setTorontoTime] = useState('');
-  const [delhiTime, setDelhiTime] = useState('');
-  const [torontoDate, setTorontoDate] = useState('');
-  const [delhiDate, setDelhiDate] = useState('');
-
-  const [torontoPosition, setTorontoPosition] = useState({ x: 0, y: 0, hours: 0 });
-  const [delhiPosition, setDelhiPosition] = useState({ x: 0, y: 0, hours: 0 });
+  const [timezones, setTimezones] = useState<Timezone[]>([
+    { name: 'Toronto', zone: 'America/Toronto', color: '#f43f5e' },
+    { name: 'New Delhi', zone: 'Asia/Kolkata', color: '#14b8a6' }
+  ]);
+  const [timezoneData, setTimezoneData] = useState<Record<string, TimezoneData>>({});
+  const selectRef = useRef<HTMLSelectElement>(null);
 
   const [dialOffset, setDialOffset] = useState(0);
   const [timeOffset, setTimeOffset] = useState(0); // in hours
@@ -21,6 +60,32 @@ function SunWave() {
   const isDragging = useRef(false);
   const startX = useRef(0);
   const currentOffset = useRef(0);
+
+  const handleTimezoneSelect = (value: string) => {
+    if (!value) return;
+
+    const selected = COMMON_TIMEZONES.find(tz => tz.zone === value);
+    if (!selected) return;
+
+    // Check if timezone already exists
+    if (timezones.some(tz => tz.zone === selected.zone)) {
+      return;
+    }
+
+    const nextColor = COLORS[timezones.length % COLORS.length];
+    const newTz: Timezone = {
+      name: selected.name,
+      zone: selected.zone,
+      color: nextColor
+    };
+
+    setTimezones([...timezones, newTz]);
+
+    // Reset the select
+    if (selectRef.current) {
+      selectRef.current.value = '';
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -55,63 +120,6 @@ function SunWave() {
       const now = new Date();
       const adjustedTime = new Date(now.getTime() + timeOffset * 3600000); // Add offset in milliseconds
 
-      const torontoFormatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/Toronto',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      });
-
-      const delhiFormatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'Asia/Kolkata',
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-      });
-
-      const torontoDateFormatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/Toronto',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      });
-
-      const delhiDateFormatter = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'Asia/Kolkata',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-      });
-
-      setTorontoTime(torontoFormatter.format(adjustedTime));
-      setDelhiTime(delhiFormatter.format(adjustedTime));
-      setTorontoDate(torontoDateFormatter.format(adjustedTime));
-      setDelhiDate(delhiDateFormatter.format(adjustedTime));
-
-      // Calculate positions on the chart
-      const torontoDate = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'America/Toronto',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: false
-      }).formatToParts(adjustedTime);
-
-      const delhiDate = new Intl.DateTimeFormat('en-US', {
-        timeZone: 'Asia/Kolkata',
-        hour: 'numeric',
-        minute: 'numeric',
-        hour12: false
-      }).formatToParts(adjustedTime);
-
-      const getTimeInHours = (parts: Intl.DateTimeFormatPart[]) => {
-        const hours = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
-        const minutes = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
-        return hours + minutes / 60;
-      };
-
-      const torontoHours = getTimeInHours(torontoDate);
-      const delhiHours = getTimeInHours(delhiDate);
-
       const width = chartDimensions.width;
       const height = chartDimensions.height;
       const centerY = height / 2;
@@ -124,12 +132,50 @@ function SunWave() {
         return { x, y, hours };
       };
 
-      setTorontoPosition(calculatePosition(torontoHours));
-      setDelhiPosition(calculatePosition(delhiHours));
+      const getTimeInHours = (parts: Intl.DateTimeFormatPart[]) => {
+        const hours = parseInt(parts.find(p => p.type === 'hour')?.value || '0');
+        const minutes = parseInt(parts.find(p => p.type === 'minute')?.value || '0');
+        return hours + minutes / 60;
+      };
+
+      const newData: Record<string, TimezoneData> = {};
+
+      timezones.forEach((tz) => {
+        const timeFormatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: tz.zone,
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+
+        const dateFormatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: tz.zone,
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric'
+        });
+
+        const timeParts = new Intl.DateTimeFormat('en-US', {
+          timeZone: tz.zone,
+          hour: 'numeric',
+          minute: 'numeric',
+          hour12: false
+        }).formatToParts(adjustedTime);
+
+        const hours = getTimeInHours(timeParts);
+
+        newData[tz.zone] = {
+          time: timeFormatter.format(adjustedTime),
+          date: dateFormatter.format(adjustedTime),
+          position: calculatePosition(hours)
+        };
+      });
+
+      setTimezoneData(newData);
     };
 
     updateTimes();
-  }, [timeOffset, chartDimensions]);
+  }, [timeOffset, chartDimensions, timezones]);
 
   // Dial drag handlers
   const handleMouseDown = (e: React.MouseEvent) => {
@@ -218,9 +264,11 @@ function SunWave() {
   }
 
   return (
-    <div className="flex flex-col sm:gap-4 w-full max-w-[600px] sm:px-4 h-full sm:h-auto">
-      {/* Chart - Top on mobile */}
-      <div ref={chartRef} className="relative w-full aspect-[4/3] sm:aspect-[4/3] border border-zinc-800/50 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl shadow-black/40 sm:order-2">
+    <div className="flex flex-col sm:flex-row sm:gap-4 w-full max-w-[1200px] sm:px-4 h-full sm:h-auto">
+      {/* Left Panel on Desktop / Chart on Mobile */}
+      <div className="flex flex-col gap-4 sm:flex-1 order-1 sm:order-none">
+        {/* Chart */}
+        <div ref={chartRef} className="relative w-full aspect-[4/3] sm:aspect-[4/3] border border-zinc-800/50 rounded-xl sm:rounded-2xl overflow-hidden shadow-2xl shadow-black/40 order-1 sm:order-none">
         {/* Sky gradient background */}
         <div
           className="absolute inset-0"
@@ -322,114 +370,122 @@ function SunWave() {
             </text>
           ))}
 
-          {/* Toronto marker */}
-          <g>
-            <circle
-              cx={torontoPosition.x}
-              cy={torontoPosition.y}
-              r="8"
-              fill="#f43f5e"
-              stroke="#fafafa"
-              strokeWidth="2"
-            />
-            <text
-              x={torontoPosition.x}
-              y={torontoPosition.y - 16}
-              textAnchor="middle"
-              fill="#fafafa"
-              fontSize="13"
-              fontWeight="600"
-              fontFamily="system-ui, sans-serif"
-              style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}
-            >
-              Toronto
-            </text>
-          </g>
+          {/* Timezone markers */}
+          {timezones.map((tz) => {
+            const data = timezoneData[tz.zone];
+            if (!data) return null;
 
-          {/* Delhi marker */}
-          <g>
-            <circle
-              cx={delhiPosition.x}
-              cy={delhiPosition.y}
-              r="8"
-              fill="#14b8a6"
-              stroke="#fafafa"
-              strokeWidth="2"
-            />
-            <text
-              x={delhiPosition.x}
-              y={delhiPosition.y - 16}
-              textAnchor="middle"
-              fill="#fafafa"
-              fontSize="13"
-              fontWeight="600"
-              fontFamily="system-ui, sans-serif"
-              style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}
-            >
-              New Delhi
-            </text>
-          </g>
+            return (
+              <g key={tz.zone}>
+                <circle
+                  cx={data.position.x}
+                  cy={data.position.y}
+                  r="8"
+                  fill={tz.color}
+                  stroke="#fafafa"
+                  strokeWidth="2"
+                />
+                <text
+                  x={data.position.x}
+                  y={data.position.y - 16}
+                  textAnchor="middle"
+                  fill="#fafafa"
+                  fontSize="13"
+                  fontWeight="600"
+                  fontFamily="system-ui, sans-serif"
+                  style={{ textShadow: '0 2px 8px rgba(0,0,0,0.8)' }}
+                >
+                  {tz.name}
+                </text>
+              </g>
+            );
+          })}
         </svg>
-      </div>
-
-      {/* Times - Vertical list on mobile, horizontal on desktop */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:gap-12 justify-center text-xl sm:text-2xl font-mono py-4 sm:py-0 sm:order-1">
-        <div className="flex items-center justify-between sm:flex-col sm:items-center px-4 sm:px-0">
-          <div className="flex flex-col sm:items-center">
-            <div className="text-sm sm:text-sm text-rose-500 font-semibold">Toronto</div>
-            <div className="text-[10px] sm:text-xs text-zinc-500">{torontoDate}</div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-bold text-zinc-100 sm:mt-1">{torontoTime}</div>
         </div>
-        <div className="flex items-center justify-between sm:flex-col sm:items-center px-4 sm:px-0">
-          <div className="flex flex-col sm:items-center">
-            <div className="text-sm sm:text-sm text-teal-400 font-semibold">New Delhi</div>
-            <div className="text-[10px] sm:text-xs text-zinc-500">{delhiDate}</div>
-          </div>
-          <div className="text-2xl sm:text-3xl font-bold text-zinc-100 sm:mt-1">{delhiTime}</div>
-        </div>
-      </div>
 
-      {/* Horizontal Dial - Bottom on mobile, thicker for touch */}
-      <div className="w-full h-20 sm:h-20 relative overflow-hidden bg-zinc-900/50 rounded-lg sm:rounded-xl border border-zinc-800/50 cursor-grab active:cursor-grabbing select-none mt-auto sm:mt-0 sm:order-3">
-        <div
-          ref={dialRef}
-          className="absolute inset-0 flex items-center"
-          onMouseDown={handleMouseDown}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-        >
-          {/* Generate dial marks - create infinite looping effect */}
+        {/* Horizontal Dial - Inside left panel on desktop, last on mobile */}
+        <div className="w-full h-20 sm:h-20 relative overflow-hidden bg-zinc-900/50 rounded-lg sm:rounded-xl border border-zinc-800/50 cursor-grab active:cursor-grabbing select-none mt-auto sm:mt-0 order-3 sm:order-none">
           <div
-            className="flex items-center h-full"
-            style={{
-              transform: `translateX(${dialOffset % 200}px)`,
-              marginLeft: '-200px'
-            }}
+            ref={dialRef}
+            className="absolute inset-0 flex items-center"
+            onMouseDown={handleMouseDown}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
-            {Array.from({ length: 150 }).map((_, i) => {
-              const isMajor = i % 10 === 0;
-              const isMinor = i % 5 === 0;
+            {/* Generate dial marks - create infinite looping effect */}
+            <div
+              className="flex items-center h-full"
+              style={{
+                transform: `translateX(${dialOffset % 200}px)`,
+                marginLeft: '-200px'
+              }}
+            >
+              {Array.from({ length: 150 }).map((_, i) => {
+                const isMajor = i % 10 === 0;
+                const isMinor = i % 5 === 0;
+                return (
+                  <div key={i} className="flex items-center flex-shrink-0">
+                    <div
+                      className={`${
+                        isMajor
+                          ? 'h-8 sm:h-10 w-0.5 bg-zinc-300'
+                          : isMinor
+                          ? 'h-5 sm:h-6 w-0.5 bg-zinc-500'
+                          : 'h-3 sm:h-4 w-px bg-zinc-600'
+                      }`}
+                    />
+                    <div className="w-3 sm:w-4" />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          {/* Center indicator */}
+          <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-rose-500 pointer-events-none" />
+        </div>
+      </div>
+
+      {/* Right Panel: Time List */}
+      <div className="flex flex-col gap-3 justify-start text-xl sm:text-2xl font-mono py-4 sm:py-0 sm:w-80 max-w-full order-2 sm:order-none">
+        {timezones.map((tz) => {
+          const data = timezoneData[tz.zone];
+          if (!data) return null;
+
+          return (
+            <div key={tz.zone} className="flex items-center justify-between px-4 sm:px-0">
+              <div className="flex flex-col">
+                <div className="text-sm sm:text-sm font-semibold" style={{ color: tz.color }}>{tz.name}</div>
+                <div className="text-[10px] sm:text-xs text-zinc-500">{data.date}</div>
+              </div>
+              <div className="text-2xl sm:text-3xl font-bold text-zinc-100">{data.time}</div>
+            </div>
+          );
+        })}
+
+        {/* Add Timezone - Native Select Styled as Button */}
+        <div className="flex items-center justify-center px-4 sm:px-0">
+          <select
+            ref={selectRef}
+            onChange={(e) => handleTimezoneSelect(e.target.value)}
+            className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded-lg border border-zinc-700 text-sm transition-colors cursor-pointer appearance-none"
+            value=""
+          >
+            <option value="">+ Add Timezone</option>
+            {COMMON_TIMEZONES.map((tz) => {
+              const alreadyAdded = timezones.some(t => t.zone === tz.zone);
               return (
-                <div key={i} className="flex items-center flex-shrink-0">
-                  <div
-                    className={`${
-                      isMajor
-                        ? 'h-8 sm:h-10 w-0.5 bg-zinc-300'
-                        : isMinor
-                        ? 'h-5 sm:h-6 w-0.5 bg-zinc-500'
-                        : 'h-3 sm:h-4 w-px bg-zinc-600'
-                    }`}
-                  />
-                  <div className="w-3 sm:w-4" />
-                </div>
+                <option
+                  key={tz.zone}
+                  value={tz.zone}
+                  disabled={alreadyAdded}
+                >
+                  {tz.name}
+                </option>
               );
             })}
-          </div>
+          </select>
         </div>
-        {/* Center indicator */}
-        <div className="absolute left-1/2 top-0 bottom-0 w-0.5 bg-rose-500 pointer-events-none" />
       </div>
     </div>
   );
