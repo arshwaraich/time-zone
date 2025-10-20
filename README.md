@@ -2,7 +2,7 @@
 
 An interactive time zone visualization showing Toronto and New Delhi times on an animated sun path chart. Built as a PWA with Next.js, React, and Tailwind CSS.
 
-<img width="773" height="608" alt="Screenshot 2025-10-07 at 12 52 04 am" src="https://github.com/user-attachments/assets/8e722655-3259-4fce-9687-fde337653541" />
+<img width="1440" height="900" alt="Screenshot 2025-10-19 at 10 34 12 pm" src="https://github.com/user-attachments/assets/3f0b8b9b-1873-4e00-8e7e-4d3143311123" />
 
 
 ## Features
